@@ -25,6 +25,19 @@ function showSetup() {
   document.querySelector('#result-screen').classList.add('hidden');
 }
 
+function enterChallenge() {
+  const intro = document.querySelector('#intro-screen');
+  if (intro.classList.contains('is-exiting')) return;
+  intro.classList.add('is-exiting');
+  const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 360;
+  setTimeout(() => {
+    intro.classList.add('hidden');
+    document.querySelector('#game-shell').classList.remove('hidden');
+    document.querySelector('#setup-screen').classList.remove('hidden');
+    document.querySelector('#question-total').focus();
+  }, delay);
+}
+
 function renderQuestion() {
   if (!round || !round.active) return;
   if (round.answered >= round.total) {
@@ -99,6 +112,9 @@ document.querySelectorAll('[data-count]').forEach((button) => {
     document.querySelectorAll('.preset').forEach((preset) => preset.classList.toggle('selected', preset === button));
   });
 });
+
+document.querySelector('#start-from-intro').addEventListener('click', enterChallenge);
+document.querySelector('#skip-intro').addEventListener('click', enterChallenge);
 
 document.querySelector('#question-total').addEventListener('input', (event) => {
   document.querySelectorAll('.preset').forEach((button) => {

@@ -10,19 +10,54 @@
   </head>
   <body>
     <main class="app">
-      <header class="topbar">
-        <a class="brand" href="#" aria-label="구구단 챌린지 홈"><span class="brand-mark">×</span><span>구구단 챌린지<small>30-SECOND SPRINT</small></span></a>
-        <span class="time-badge">◷ <b>30초</b> 제한</span>
-      </header>
-
-      <section class="intro">
-        <p class="eyebrow">READY, SET, MULTIPLY!</p>
-        <h1>구구단 스피드 챌린지</h1>
-        <p>문항 수를 고르고, 30초 동안 몇 개를 맞히는지 도전해요.</p>
+      <section id="intro-screen" class="intro-screen" aria-labelledby="intro-title">
+        <div class="intro-grain" aria-hidden="true"></div>
+        <header class="intro-nav">
+          <a class="intro-brand" href="#" aria-label="구구단 챌린지 인트로"><span>×</span> GUGUDAN / SPRINT</a>
+          <span class="intro-index">MATH IN MOTION <i>—</i> 01</span>
+          <button id="skip-intro" class="skip-intro" type="button">건너뛰기 <span>↗</span></button>
+        </header>
+        <div class="intro-layout">
+          <div class="intro-copy">
+            <p class="intro-kicker"><i></i> READY / SET / MULTIPLY</p>
+            <h1 id="intro-title"><span>30초 안에,</span><span class="title-highlight">구구단 감각을</span><span>깨워라<span class="title-period">.</span></span></h1>
+            <p class="intro-description">빠르게 생각하고, 정확하게 맞히고,<br />나의 기록을 넘어서는 시간.</p>
+            <button id="start-from-intro" class="intro-cta" type="button"><span class="cta-icon">▶</span> 챌린지 시작하기 <span class="cta-arrow">↗</span></button>
+            <div class="intro-footnote"><span>02—09</span><i></i><span>곱셈 감각을 깨우는 30초</span></div>
+          </div>
+          <div class="intro-art" aria-hidden="true">
+            <div class="art-grid"></div>
+            <div class="art-orbit orbit-a"></div>
+            <div class="art-orbit orbit-b"></div>
+            <div class="art-orbit orbit-c"></div>
+            <div class="fluid-orb"><div class="orb-shine"></div><div class="orb-core"><small>QUICK THINKING</small><strong>8 <i>×</i> 7</strong><span>56</span></div></div>
+            <span class="math-float math-one">6 × 9</span>
+            <span class="math-float math-two">7 × 4</span>
+            <span class="math-float math-three">9 × 8</span>
+            <span class="orbit-dot dot-one"></span><span class="orbit-dot dot-two"></span><span class="orbit-dot dot-three"></span>
+            <div class="mini-card card-score"><small>YOUR PACE</small><strong>+<span>30</span><i>%</i></strong><div class="spark-bars"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+            <div class="mini-card card-time"><small>TIME LIMIT</small><strong>00:30</strong><span>ONE ROUND. GO!</span></div>
+            <div class="art-label label-left"><i></i> THINK FAST</div>
+            <div class="art-label label-right">MULTIPLY / 02—09</div>
+          </div>
+        </div>
+        <footer class="intro-bottom"><span>GUGUDAN SPRINT <b>·</b> BUILT FOR YOUR NEXT BEST</span><div class="intro-steps"><i class="step-active"></i><i></i><i></i><i></i></div><span>MOVE <b>/</b> THINK <b>/</b> ANSWER</span></footer>
       </section>
 
-      <section class="challenge-card">
-        <div id="setup-screen">
+      <div id="game-shell" class="game-shell hidden">
+        <header class="topbar">
+          <a class="brand" href="#" aria-label="구구단 챌린지 홈"><span class="brand-mark">×</span><span>구구단 챌린지<small>30-SECOND SPRINT</small></span></a>
+          <span class="time-badge">◷ <b>30초</b> 제한</span>
+        </header>
+
+        <section class="intro">
+          <p class="eyebrow">READY, SET, MULTIPLY!</p>
+          <h1>구구단 스피드 챌린지</h1>
+          <p>문항 수를 고르고, 30초 동안 몇 개를 맞히는지 도전해요.</p>
+        </section>
+
+        <section class="challenge-card">
+        <div id="setup-screen" class="hidden">
           <div class="big-symbol">×</div>
           <h2>몇 문제에 도전할까요?</h2>
           <p class="description">선택한 문항을 모두 풀거나 30초가 지나면 챌린지가 끝나요.</p>
@@ -68,8 +103,9 @@
           <div class="result-stats"><span>푼 문제 <b id="result-answered">0</b></span><span>정확도 <b id="result-accuracy">0%</b></span></div>
           <button id="retry-button" class="primary-button start-button" type="button">다시 도전하기 <span>↻</span></button>
         </div>
-      </section>
-      <footer>한 문제씩 풀다 보면 구구단이 더 쉬워져요 <span>✦</span></footer>
+        </section>
+        <footer>한 문제씩 풀다 보면 구구단이 더 쉬워져요 <span>✦</span></footer>
+      </div>
     </main>
   </body>
 </html>
