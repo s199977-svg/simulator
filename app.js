@@ -79,6 +79,9 @@ let state = loadState();
 let activeView = 'home';
 let activeConceptId = null;
 let toastTimer;
+let gugudanSession = null;
+let gugudanTimer = null;
+let gugudanNextQuestionTimer = null;
 
 const esc = (value) => String(value).replace(/[&<>"']/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -146,7 +149,11 @@ function showView(view) {
   document.querySelectorAll('.view').forEach((section) => section.classList.add('hidden'));
   document.querySelector(`#${view}-view`).classList.remove('hidden');
   document.querySelectorAll('.nav-link').forEach((button) => button.classList.toggle('active', button.dataset.view === view));
-  document.querySelector('#breadcrumb-current').textContent = view === 'home' ? '내 학습' : '개념 모험';
+  document.querySelector('#breadcrumb-current').textContent = {
+    home: '내 학습',
+    concepts: '개념 모험',
+    gugudan: '구구단 챌린지'
+  }[view] || '내 학습';
 }
 
 function lessonMarkup(concept) {
@@ -226,6 +233,101 @@ function updateStreak() {
   state.lastStudyDate = today;
 }
 
+function makeGugudanQuestions() {
+  const questions = [];
+  for (let first = 2; first <= 9; first += 1) {
+    for (let second = 2; second <= 9; second += 1) {
+      questions.push({ first, second, answer: first * second });
+    }
+  }
+  for (let index = questions.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [questions[index], questions[swapIndex]] = [questions[swapIndex], questions[index]];
+  }
+  return questions;
+}
+
+function showGugudanSetup() {
+  clearInterval(gugudanTimer);
+  clearTimeout(gugudanNextQuestionTimer);
+  gugudanTimer = null;
+  gugudanNextQuestionTimer = null;
+  gugudanSession = null;
+  document.querySelector('#gugudan-setup').classList.remove('hidden');
+  document.querySelector('#gugudan-active').classList.add('hidden');
+  document.querySelector('#gugudan-result').classList.add('hidden');
+}
+
+function renderGugudanQuestion() {
+  if (!gugudanSession || !gugudanSession.active) return;
+  if (gugudanSession.answered >= gugudanSession.total) {
+    finishGugudan('count');
+    return;
+  }
+  const question = gugudanSession.questions[gugudanSession.answered];
+  document.querySelector('#gugudan-question-count').textContent = `문제 ${gugudanSession.answered + 1} / ${gugudanSession.total}`;
+  document.querySelector('#gugudan-equation').textContent = `${question.first} × ${question.second}`;
+  document.querySelector('#gugudan-answer').value = '';
+  document.querySelector('#gugudan-answer').disabled = false;
+  document.querySelector('#gugudan-submit').disabled = false;
+  document.querySelector('#gugudan-feedback').textContent = '';
+  document.querySelector('#gugudan-answer').focus();
+}
+
+function updateGugudanTimer() {
+  if (!gugudanSession || !gugudanSession.active) return;
+  const remaining = Math.max(0, gugudanSession.deadline - performance.now());
+  const timer = document.querySelector('#gugudan-timer');
+  timer.textContent = (remaining / 1000).toFixed(1);
+  timer.closest('.timer-display').classList.toggle('urgent', remaining <= 8000);
+  if (remaining === 0) finishGugudan('time');
+}
+
+function finishGugudan(reason) {
+  if (!gugudanSession || !gugudanSession.active) return;
+  gugudanSession.active = false;
+  clearInterval(gugudanTimer);
+  clearTimeout(gugudanNextQuestionTimer);
+  gugudanTimer = null;
+  gugudanNextQuestionTimer = null;
+  document.querySelector('#gugudan-active').classList.add('hidden');
+  document.querySelector('#gugudan-result').classList.remove('hidden');
+  document.querySelector('#gugudan-result-title').textContent = reason === 'count' ? '선택한 문항을 모두 풀었어요!' : '30초 도전이 끝났어요!';
+  document.querySelector('#gugudan-result-message').textContent = reason === 'count'
+    ? '정해 둔 문항을 시간 안에 모두 풀었어요. 훌륭해요!'
+    : '다음 도전에서는 몇 문제를 더 맞힐 수 있을까요?';
+  document.querySelector('#gugudan-result-correct').textContent = gugudanSession.correct;
+  document.querySelector('#gugudan-result-answered').textContent = gugudanSession.answered;
+  const accuracy = gugudanSession.answered
+    ? Math.round((gugudanSession.correct / gugudanSession.answered) * 100)
+    : 0;
+  document.querySelector('#gugudan-result-accuracy').textContent = `${accuracy}%`;
+}
+
+function startGugudan(count) {
+  clearInterval(gugudanTimer);
+  clearTimeout(gugudanNextQuestionTimer);
+  gugudanSession = {
+    total: count,
+    answered: 0,
+    correct: 0,
+    questions: makeGugudanQuestions(),
+    deadline: performance.now() + 30000,
+    active: true
+  };
+  document.querySelector('#gugudan-setup').classList.add('hidden');
+  document.querySelector('#gugudan-result').classList.add('hidden');
+  document.querySelector('#gugudan-active').classList.remove('hidden');
+  document.querySelector('#gugudan-correct').textContent = '0';
+  document.querySelector('#gugudan-progress').textContent = `0 / ${count}`;
+  document.querySelector('#gugudan-progress-bar').style.width = '0%';
+  document.querySelector('#gugudan-feedback').textContent = '';
+  document.querySelector('#gugudan-timer').closest('.timer-display').classList.remove('urgent');
+  renderGugudanQuestion();
+  updateGugudanTimer();
+  gugudanTimer = setInterval(updateGugudanTimer, 100);
+}
+
 document.addEventListener('click', (event) => {
   const nav = event.target.closest('[data-view]');
   if (nav) {
@@ -235,8 +337,14 @@ document.addEventListener('click', (event) => {
   const go = event.target.closest('[data-go]');
   if (go) {
     showView(go.dataset.go);
-    renderConcepts();
+    if (go.dataset.go === 'concepts') renderConcepts();
   }
+  const preset = event.target.closest('[data-count]');
+  if (preset) {
+    document.querySelector('#gugudan-count').value = preset.dataset.count;
+    document.querySelectorAll('.preset-button').forEach((button) => button.classList.toggle('selected', button === preset));
+  }
+  if (event.target.closest('#gugudan-retry')) showGugudanSetup();
   const open = event.target.closest('[data-open]');
   if (open) openConcept(open.dataset.open);
   if (event.target.closest('#back-to-concepts')) {
@@ -351,6 +459,48 @@ document.querySelector('#add-concept-form').addEventListener('submit', (event) =
   renderConcepts();
   event.target.reset();
   showToast('새 개념 모험을 만들었어요!');
+});
+
+document.querySelector('#gugudan-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const count = Number(document.querySelector('#gugudan-count').value);
+  if (!Number.isInteger(count) || count < 1 || count > 64) {
+    document.querySelector('#gugudan-count').reportValidity();
+    return;
+  }
+  startGugudan(count);
+});
+
+document.querySelector('#gugudan-count').addEventListener('input', (event) => {
+  const count = event.target.value;
+  document.querySelectorAll('.preset-button').forEach((button) => {
+    button.classList.toggle('selected', button.dataset.count === count);
+  });
+});
+
+document.querySelector('#gugudan-answer-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (!gugudanSession || !gugudanSession.active) return;
+  const answerInput = document.querySelector('#gugudan-answer');
+  if (!answerInput.value) return;
+  const question = gugudanSession.questions[gugudanSession.answered];
+  const answer = Number(answerInput.value);
+  gugudanSession.answered += 1;
+  const correct = answer === question.answer;
+  if (correct) gugudanSession.correct += 1;
+  document.querySelector('#gugudan-correct').textContent = gugudanSession.correct;
+  document.querySelector('#gugudan-progress').textContent = `${gugudanSession.answered} / ${gugudanSession.total}`;
+  document.querySelector('#gugudan-progress-bar').style.width = `${(gugudanSession.answered / gugudanSession.total) * 100}%`;
+  document.querySelector('#gugudan-feedback').textContent = correct
+    ? '정답이에요!'
+    : `아쉬워요. ${question.first} × ${question.second} = ${question.answer}`;
+  answerInput.disabled = true;
+  document.querySelector('#gugudan-submit').disabled = true;
+  if (gugudanSession.answered >= gugudanSession.total) {
+    finishGugudan('count');
+    return;
+  }
+  gugudanNextQuestionTimer = setTimeout(renderGugudanQuestion, 350);
 });
 
 document.querySelector('#concept-search').addEventListener('input', (event) => renderConcepts(event.target.value));
